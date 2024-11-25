@@ -3,10 +3,11 @@ from datetime import datetime, timedelta
 
 import google.generativeai as genai
 
-API_KEY = "AIzaSyD4fcsx2GHbl4WNWgPkoJLof7uxmDf66MY"
+API_KEY = "AIzaSyBLcvSecNLxix26DJDK2o5jNtNvLC4owTQ"
 genai.configure(api_key=API_KEY)
 
-
+import streamlit as st
+from datetime import datetime, timedelta
 
 # Initialize session state for chat history and service selection
 if "messages" not in st.session_state:
@@ -34,6 +35,15 @@ services = {
     "12": {"name": "Additional Features", "description": "Introduce investment options, subscription management, and related services."}
 }
 
+# Function to reset the session state for going to the main menu
+def go_to_main_menu():
+    st.session_state["messages"] = []
+    st.session_state["service_selected"] = False
+    st.session_state["selected_service"] = None
+    st.session_state["selected_description"] = None
+    st.rerun()  # Refresh the app to display the main menu
+
+
 # Function to get response from Gemini API
 def get_gemini_response(question, service_name, service_description):
     model = genai.GenerativeModel("gemini-pro")
@@ -47,6 +57,7 @@ def get_gemini_response(question, service_name, service_description):
     """
     response = model.generate_content(dynamic_prompt)
     return response.text
+
 
 # Dummy functionality for "Ticket Booking"
 def handle_ticket_booking(user_input):
@@ -77,7 +88,7 @@ def handle_bill_payment(user_input):
 
 # Display welcome message and options if no service is selected
 if not st.session_state["service_selected"]:
-    st.header("Welcome to the Easypaisa Chatbot!")
+    st.header("✨Welcome to the Easypaisa Chatbot!")
     st.write("Please select a service by typing the corresponding number:")
     for number, service in services.items():
         st.write(f"{number}. {service['name']}")
@@ -93,6 +104,7 @@ if not st.session_state["service_selected"]:
             "role": "assistant",
             "content": f"You have selected: {services[service_input]['name']}. You can now ask questions about this service."
         })
+        st.rerun()  # Refresh the app to display the selected service interface
     elif service_input:
         st.write("Invalid input. Please enter a valid number from the list.")
 
@@ -114,6 +126,11 @@ if st.session_state["service_selected"]:
     prompt = st.chat_input(f"Ask about {selected_service}:")
 
     if prompt:
+        # Check if the user wants to go to the main menu
+        if "i want to go to the main menu" in prompt.lower():
+            go_to_main_menu()  # Reset session and return to the main menu
+            st.stop()  # Prevent further execution
+
         # Add user message to the session state
         st.session_state["messages"].append({"role": "user", "content": prompt})
 
@@ -134,4 +151,3 @@ if st.session_state["service_selected"]:
             st.markdown(prompt)
         with st.chat_message("assistant"):
             st.markdown(response)
-
